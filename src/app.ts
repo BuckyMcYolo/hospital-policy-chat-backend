@@ -55,7 +55,7 @@ fileBasedRouting(app)
 
 //default route
 app.get("/", (req: Request, res: Response) => {
-	res.send("Hello World. Ping")
+	res.send("Hello World. Ping. test")
 })
 
 // middleware
