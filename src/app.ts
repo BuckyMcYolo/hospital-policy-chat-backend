@@ -14,18 +14,14 @@ const env = process.env["NODE_ENV"]
 const isDevelopment = !env || env === "development"
 const prodCorsOrigin = process.env["PROD_CORS_ORIGIN"]
 
-app.use(express.json())
-
-app.use(express.urlencoded({ extended: true }))
-
-app.use(helmet()) // for security
-
-app.use(express.text())
-
 //init CORS
 if (isDevelopment) {
 	console.warn("Running in development mode - allowing CORS for all origins")
-	app.use(cors())
+	app.use(
+		cors({
+			origin: "*" // Allow all origins
+		})
+	)
 } else if (prodCorsOrigin) {
 	console.log(
 		`Running in production mode - allowing CORS for domain: ${prodCorsOrigin}`
@@ -37,6 +33,16 @@ if (isDevelopment) {
 } else {
 	console.warn("Production CORS origin not set, defaulting to no CORS.")
 }
+
+app.use(express.json())
+
+app.use(express.urlencoded({ extended: true }))
+
+app.use(helmet()) // for security
+
+app.use(express.text())
+
+app.use("/audio", express.static("audio"))
 
 // have to do this bc of ES6
 const __filename = fileURLToPath(import.meta.url)
