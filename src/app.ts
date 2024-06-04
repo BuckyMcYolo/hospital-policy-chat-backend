@@ -74,16 +74,19 @@ app.get("/", (req: Request, res: Response) => {
 app.use(logger)
 
 //deepgram wss
-
 const deepgramClient = createClient(process.env.DEEPGRAM_API_KEY!)
 let keepAlive: NodeJS.Timeout | null = null
 
 const setupDeepgram = (ws: WebSocket): LiveClient => {
 	const deepgram = deepgramClient.listen.live({
-		language: "en",
+		language: "en-US",
 		punctuate: true,
 		smart_format: true,
-		model: "nova"
+		model: "nova-2",
+		endpointing: 100
+		// interim_results: true,
+		// utterance_end_ms: 1000,
+		// vad_events: true
 	})
 
 	if (keepAlive) {
@@ -163,11 +166,19 @@ wss.on("connection", (ws) => {
 
 	ws.on("close", () => {
 		console.log("ws: client disconnected")
-		if (deepgram.getReadyState() === 1 /* OPEN */) {
+		if (deepgram.getReadyState() > 1 /* CLOSING OR CLOSED */) {
 			deepgram.finish()
 		}
 		deepgram.removeAllListeners()
 	})
+})
+
+wss.on("error", (error) => {
+	console.error("ws: error", error)
+})
+
+wss.on("close", () => {
+	console.log("ws: server closed")
 })
 
 server.listen(PORT, () =>
