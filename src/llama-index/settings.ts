@@ -6,6 +6,7 @@ import {
 	// GeminiEmbedding,
 	OpenAI,
 	OpenAIEmbedding,
+	Groq,
 	Settings
 } from "llamaindex"
 import { env } from "../utils/config.js"
