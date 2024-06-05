@@ -15,8 +15,6 @@ import {
 } from "@deepgram/sdk"
 
 const app: Express = express()
-const server = http.createServer(app)
-const wss = new WebSocketServer({ server })
 
 const PORT = process.env.PORT || 5000
 const env = process.env["NODE_ENV"]
@@ -73,6 +71,12 @@ app.get("/", (req: Request, res: Response) => {
 // middleware
 app.use(logger)
 
+const server = app.listen(PORT, () =>
+	console.log(`⚡️ [server]: Server is running on port ${PORT}`)
+)
+
+const wss = new WebSocketServer({ noServer: true })
+
 //deepgram wss
 const deepgramClient = createClient(process.env.DEEPGRAM_API_KEY!)
 let keepAlive: NodeJS.Timeout | null = null
@@ -83,7 +87,7 @@ const setupDeepgram = (ws: WebSocket): LiveClient => {
 		punctuate: true,
 		smart_format: true,
 		model: "nova-2",
-		endpointing: 100
+		endpointing: 200
 		// interim_results: true,
 		// utterance_end_ms: 1000,
 		// vad_events: true
@@ -95,8 +99,11 @@ const setupDeepgram = (ws: WebSocket): LiveClient => {
 
 	keepAlive = setInterval(() => {
 		console.log("deepgram: keepalive")
-		deepgram.keepAlive()
-	}, 3000)
+		if (deepgram.getReadyState() === 1) {
+			// Check if connection is open
+			deepgram.keepAlive()
+		}
+	}, 10000)
 
 	deepgram.addListener(LiveTranscriptionEvents.Open, async () => {
 		console.log("deepgram: connected")
@@ -140,6 +147,17 @@ const setupDeepgram = (ws: WebSocket): LiveClient => {
 	return deepgram
 }
 
+server.on("upgrade", (req, socket, head) => {
+	socket.on("error", (err) => {
+		console.error(err)
+	})
+
+	wss.handleUpgrade(req, socket, head, (ws) => {
+		socket.removeListener("error", console.error)
+		wss.emit("connection", ws, req)
+	})
+})
+
 wss.on("connection", (ws) => {
 	console.log("ws: client connected")
 	let deepgram = setupDeepgram(ws)
@@ -166,10 +184,10 @@ wss.on("connection", (ws) => {
 
 	ws.on("close", () => {
 		console.log("ws: client disconnected")
-		if (deepgram.getReadyState() > 1 /* CLOSING OR CLOSED */) {
-			deepgram.finish()
-		}
+		deepgram.finish()
 		deepgram.removeAllListeners()
+		// @ts-ignore
+		deepgram = null
 	})
 })
 
@@ -180,7 +198,3 @@ wss.on("error", (error) => {
 wss.on("close", () => {
 	console.log("ws: server closed")
 })
-
-server.listen(PORT, () =>
-	console.log(`⚡️ [server]: Server is running on port ${PORT}`)
-)
