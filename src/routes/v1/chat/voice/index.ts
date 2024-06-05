@@ -9,16 +9,29 @@ import {
 	VectorStoreIndex,
 	Settings,
 	Groq,
-	Document
+	Document,
+	RetrieverQueryEngine,
+	SummaryIndex,
+	ResponseSynthesizer,
+	MetadataMode,
+	TreeSummarize,
+	Refine,
+	SimpleResponseBuilder,
+	ContextChatEngine
 } from "llamaindex"
 import { convertMessageContent } from "../../../../utils/convertAiMessage.js"
 import { LlamaIndexStream } from "../../../../utils/llama-index-stream.js"
 import { env } from "../../../../utils/config.js"
+import { createClient } from "@deepgram/sdk"
+import { Patient } from "./types.js"
+import { createCallbackManager } from "../../../../utils/stream-helper.js"
 
 export const post: Handler = async (req, res) => {
 	try {
-		const { messages, data }: { messages: ChatMessage[]; data: any } =
-			req.body
+		const {
+			messages,
+			patientList
+		}: { messages: ChatMessage[]; patientList: Patient[] } = req.body
 		const userMessage = messages.pop()
 		console.log(messages)
 		if (!messages || !userMessage || userMessage.role !== "user") {
@@ -27,44 +40,71 @@ export const post: Handler = async (req, res) => {
 			})
 		}
 
-		const tools: BaseToolWithCall[] = []
+		console.log("patientList", patientList)
 
-		// Convert message content from Vercel/AI format to LlamaIndex/OpenAI format
-		const userMessageContent = convertMessageContent(
-			userMessage.content as string,
-			data?.imageUrl
-		)
+		if (!patientList || patientList.length === 0) {
+			return res.status(400).json({
+				error: "No patient data was passed in the request. Please provide patient data"
+			})
+		}
 
 		Settings.llm = new Groq({
 			model: "llama3-70b-8192",
-			maxTokens: 4096,
+			maxTokens: 2000,
 			apiKey: env.GROQ_API_KEY!,
 			supportToolCall: true
 		})
 
-		const chatEngine = new OpenAIAgent({
-			tools: tools,
-			systemPrompt:
-				"You am a helpful assistant named Ava. You may answer anything",
-			chatHistory: messages
+		const documents: Document[] = []
+
+		patientList.forEach((patient) => {
+			const stringifiedPatient = JSON.stringify(patient)
+			const patientDocument = new Document({
+				text: stringifiedPatient
+			})
+			documents.push(patientDocument)
 		})
 
-		// // Calling LlamaIndex's ChatEngine to get a response
-		const { response, sources } = await chatEngine.chat({
+		const index = await SummaryIndex.fromDocuments(documents)
+
+		const retriever = index.asRetriever()
+
+		const chatEngine = new ContextChatEngine({
 			chatHistory: messages,
-			message: userMessageContent
+			retriever: retriever
 		})
 
-		console.log(response)
+		const userMessageContent = convertMessageContent(
+			userMessage.content as string,
+			undefined
+		)
 
-		const result: ChatMessage = {
-			role: "assistant",
-			content: response as unknown as MessageContent
-		}
+		// Init Vercel AI StreamData
+		const vercelStreamData = new StreamData()
 
-		return res.status(200).json({
-			result
+		// Setup callbacks
+		const callbackManager = createCallbackManager(vercelStreamData)
+
+		// Calling LlamaIndex's ChatEngine to get a streamed response
+		const response = await Settings.withCallbackManager(
+			callbackManager,
+			() => {
+				return chatEngine.chat({
+					message: userMessageContent,
+					chatHistory: messages as ChatMessage[],
+					stream: true
+				})
+			}
+		)
+
+		// Return a stream, which can be consumed by the Vercel/AI client
+		const stream = LlamaIndexStream(response, vercelStreamData, {
+			// parserOptions: {}
 		})
+
+		const processedStream = stream.pipeThrough(vercelStreamData.stream)
+
+		return streamToResponse(processedStream, res)
 	} catch (error) {
 		console.error("[LlamaIndex]", error)
 		return res.status(500).json({
