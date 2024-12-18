@@ -1,39 +1,63 @@
-# Hospital Policy Chat - Frontend
+# Hospital Policy Chat - Backend
 
-The frontend application for an AI-powered healthcare assistant platform, built with Next.js 14 and React Server Components.
+The backend server for the Hospital AI demo application, providing AI-powered healthcare information retrieval and voice processing capabilities.
 
 🔗 [Live Demo](https://hopital-policy-chat.vercel.app/)
 
-## Features 3 demo apps
+## Features
 
-### 1. Hospital Policy Search
-- Interactive chat interface for querying hospital policies and/or supplies
-- Real-time supply location assistance
-- Markdown rendering for formatted responses
-- Responsive design for various device sizes
-- See Sources in chat history for verifying what the AI outputs
+### 1. Hospital policy & supplies chat
+- Integrates Vector database management for hospital policies pdf docs and supplies csv
+- Real-time document retrieval and query processing
+- provides sources for each RAG retrieval
+- Context-aware response generation
 
-### 2. Patient Information Q&A
-- Click on a patient to view their:
-  - Vital signs
-  - Lab results
-  - Medications
-  - Medical orders
-- Ask the AI about any of the information in the chat window to the right
+### 2. Patient Data Processing
+- LlamaIndex integration for medical record indexing
+- Secure patient data handling
+- Real-time data retrieval and processing
 
-### 3. Voice Interaction System
-- Voice-enabled chat interface
-- Real-time speech-to-text conversion
-- Natural text-to-speech responses
-- Role-based interaction modes (ICU Nurse, Charge Nurse, Doctor)
-- Ask the AI any questions about your current patients (roles with less patients such as the ICU nurse will receive more in depth information on their patient while roles with many patients (ie Dr) will receive more general information)
+### 3. Voice Processing Pipeline
+- Real-time speech-to-text processing using Deepgram
+- WebSocket server for continuous audio streaming
+- Text-to-speech conversion using Elevenlabs
 
 ## Tech Stack
 
-- **Framework**: Next.js 14 & React 18 with Server Components
-- **Styling**: ShadCn & Tailwind CSS
-- **API Integration**: 
-  - makes API requests to [Backend](https://github.com/BuckyMcYolo/hospital-policy-chat-backend)
+- **Language**: Typescript
+- **Runtime**: Node.js
+- **Framework**: Express.js
+- **AI Tools**:
+  - OpenAI
+  - LlamaIndex
+  - DeepGram
+- **Database**: 
+  - Pinecone Vector DB
+- **Cloud Services**:
+  - AWS Elastic Beanstalk
+
+## Database Setup
+
+### Pinecone Setup
+1. Create a Pinecone account
+2. Create a new index with the following settings:
+   - Dimension: 1536 (for OpenAI embeddings)
+   - Metric: Cosine
+   - Pod Type: p1
+
+## Deployment
+
+### AWS Elastic Beanstalk Deployment
+
+1. Automatically deploys to AWS on commits to main
+
+## Monitoring
+
+- AWS CloudWatch integration for logs
+- Custom metrics for:
+  - API response times
+  - WebSocket connections
+  - AI processing duration
 
 ## License
 
