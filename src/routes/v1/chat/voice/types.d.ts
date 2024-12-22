@@ -110,25 +110,26 @@ export interface Patient {
 	firstName: string
 	lastName: string
 	gender: Gender
+	codeStatus?: "DNR" | "Full Code"
 	dateOfBirth: Date
-	bloodType: BloodType
+	bloodType?: BloodType
 	admissionDate: Date
 	chiefComplaint: string
 	unitType: UnitType
 	roomNumber: string
-	diagnosis: Diagnosis[]
-	medications: Medication[]
-	allergies: Allergy[]
-	contactInfo: ContactInfo[]
-	vitalSigns: VitalSign[]
-	orders: Order[]
+	diagnosis?: Diagnosis[]
+	medications?: Medication[]
+	allergies?: Allergy[]
+	contactInfo?: ContactInfo[]
+	vitalSigns?: VitalSign[]
+	orders?: Order[]
 	O2Therapy?: string // e.g., 'Intubated'
 	ventSettings?: VentSettings
-	lines: Line[]
-	labs: Lab[]
-	providers: Provider[]
-	inputs: Input[]
-	outputs: Output[]
-	netFluidBalance: number
-	vitalStatus: VitalStatus
+	lines?: Line[]
+	labs?: Lab[]
+	providers?: Provider[]
+	inputs?: Input[]
+	outputs?: Output[]
+	netFluidBalance?: number
+	vitalStatus?: VitalStatus
 }

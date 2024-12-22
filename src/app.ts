@@ -65,7 +65,7 @@ fileBasedRouting(app)
 
 //default route
 app.get("/", (req: Request, res: Response) => {
-	res.send("Hello World. Ping. test 123")
+	res.send("Hello World.")
 })
 
 // middleware
@@ -87,9 +87,9 @@ const setupDeepgram = (ws: WebSocket): LiveClient => {
 		punctuate: true,
 		smart_format: true,
 		model: "nova-2",
-		endpointing: 200
+		endpointing: 1000
 		// interim_results: true,
-		// utterance_end_ms: 1000,
+		// utterance_end_ms: 1000
 		// vad_events: true
 	})
 
@@ -160,16 +160,22 @@ server.on("upgrade", (req, socket, head) => {
 
 wss.on("connection", (ws) => {
 	console.log("ws: client connected")
-	let deepgram = setupDeepgram(ws)
+	let deepgram: LiveClient | null = setupDeepgram(ws)
+
+	if (!deepgram) {
+		console.error("ws: deepgram connection failed")
+		return
+	}
 
 	ws.on("message", (message) => {
 		console.log("ws: client data received", message)
 
-		if (deepgram.getReadyState() === 1 /* OPEN */) {
+		if (deepgram && deepgram.getReadyState() === 1 /* OPEN */) {
 			console.log("ws: data sent to deepgram")
 			//@ts-ignore
 			deepgram.send(message)
 		} else if (
+			deepgram &&
 			deepgram.getReadyState() >= 2 /* 2 = CLOSING, 3 = CLOSED */
 		) {
 			console.log("ws: data couldn't be sent to deepgram")
@@ -184,10 +190,11 @@ wss.on("connection", (ws) => {
 
 	ws.on("close", () => {
 		console.log("ws: client disconnected")
-		deepgram.finish()
-		deepgram.removeAllListeners()
-		// @ts-ignore
-		deepgram = null
+		if (deepgram) {
+			deepgram.finish()
+			deepgram.removeAllListeners()
+			deepgram = null
+		}
 	})
 })
 
