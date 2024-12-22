@@ -87,7 +87,7 @@ const setupDeepgram = (ws: WebSocket): LiveClient => {
 		punctuate: true,
 		smart_format: true,
 		model: "nova-2",
-		endpointing: 1000
+		endpointing: 1500
 		// interim_results: true,
 		// utterance_end_ms: 1000
 		// vad_events: true
@@ -103,7 +103,7 @@ const setupDeepgram = (ws: WebSocket): LiveClient => {
 			// Check if connection is open
 			deepgram.keepAlive()
 		}
-	}, 10000)
+	}, 3000)
 
 	deepgram.addListener(LiveTranscriptionEvents.Open, async () => {
 		console.log("deepgram: connected")
