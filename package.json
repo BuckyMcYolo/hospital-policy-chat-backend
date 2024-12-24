@@ -36,7 +36,7 @@
 	},
 	"dependencies": {
 		"@ai-sdk/openai": "^0.0.10",
-		"@deepgram/sdk": "^3.3.3",
+		"@deepgram/sdk": "^3.9.0",
 		"@pinecone-database/pinecone": "^2.2.0",
 		"ai": "3.0.21",
 		"ajv": "^8.12.0",

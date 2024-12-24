@@ -48,12 +48,12 @@ export const post: Handler = async (req, res) => {
 			})
 		}
 
-		// Settings.llm = new Groq({
-		// 	model: "llama3-70b-8192",
-		// 	maxTokens: 2000,
-		// 	apiKey: env.GROQ_API_KEY!,
-		// 	supportToolCall: true
-		// })
+		Settings.llm = new Groq({
+			model: "llama3-70b-8192",
+			maxTokens: 3000,
+			apiKey: env.GROQ_API_KEY!,
+			supportToolCall: true
+		})
 
 		const documents: Document[] = []
 
