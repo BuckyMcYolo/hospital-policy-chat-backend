@@ -57,9 +57,9 @@ async function uploadToS3AndGetUrl(buffer: Buffer, filename: string) {
 
 	await s3Client.send(uploadCommand)
 
-	setTimeout(() => {
-		console.log(`File ${filename} uploaded to S3`)
-	}, 250)
+	// setTimeout(() => {
+	// 	console.log(`File ${filename} uploaded to S3`)
+	// }, 250)
 
 	// Generate presigned URL
 	const getCommand = new GetObjectCommand({
