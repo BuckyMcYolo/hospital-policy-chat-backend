@@ -81,8 +81,6 @@ export const post: Handler = async (req, res) => {
 	const model = "aura-asteria-en"
 	const { provider } = query
 
-	console.log("Auth token:", token)
-
 	if (!text) {
 		return res.status(400).json({ message: "Text is required" })
 	}
@@ -99,18 +97,52 @@ export const post: Handler = async (req, res) => {
 				stream: true,
 				voice: "cgSgspJ2msm6clMCkdW9",
 				text: text,
-				model_id: "eleven_flash_v2_5"
+				model_id: "eleven_flash_v2_5",
+				output_format: "pcm_22050"
 			})
-
-			// Convert ElevenLabs stream to buffer
 			const chunks: Uint8Array[] = []
 			for await (const chunk of audioStream) {
 				chunks.push(chunk)
 			}
-			audioBuffer = Buffer.concat(chunks)
+			const pcmBuffer = Buffer.concat(chunks)
+
+			// Convert raw PCM to WAV by adding WAV header
+			const wavHeader = Buffer.alloc(44)
+			// "RIFF" header
+			wavHeader.write("RIFF", 0)
+			// File size
+			wavHeader.writeUInt32LE(pcmBuffer.length + 36, 4)
+			// "WAVE" format
+			wavHeader.write("WAVE", 8)
+			// "fmt " chunk
+			wavHeader.write("fmt ", 12)
+			// Chunk size
+			wavHeader.writeUInt32LE(16, 16)
+			// Audio format (1 = PCM)
+			wavHeader.writeUInt16LE(1, 20)
+			// Number of channels (1 = mono)
+			wavHeader.writeUInt16LE(1, 22)
+			// Sample rate (22050)
+			wavHeader.writeUInt32LE(22050, 24)
+			// Byte rate (Sample Rate * BitsPerSample * Channels / 8)
+			wavHeader.writeUInt32LE(22050 * 2 * 1, 28)
+			// Block align (BitsPerSample * Channels / 8)
+			wavHeader.writeUInt16LE(2 * 1, 32)
+			// Bits per sample (16)
+			wavHeader.writeUInt16LE(16, 34)
+			// "data" chunk
+			wavHeader.write("data", 36)
+			// Data size
+			wavHeader.writeUInt32LE(pcmBuffer.length, 40)
+
+			// Combine header and PCM data
+			audioBuffer = Buffer.concat([wavHeader, pcmBuffer])
 		} else {
 			// Deepgram
-			const response = await deepgram.speak.request({ text }, { model })
+			const response = await deepgram.speak.request(
+				{ text },
+				{ model, encoding: "linear16" }
+			)
 			const stream = await response.getStream()
 
 			if (!stream) {
