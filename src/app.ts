@@ -26,7 +26,7 @@ app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use(helmet())
 app.use(express.text())
-app.use(express.raw({ type: "audio/wav" }))
+app.use(express.raw({ type: "audio/wav", limit: "50mb" }))
 
 //init CORS
 if (isDevelopment) {
