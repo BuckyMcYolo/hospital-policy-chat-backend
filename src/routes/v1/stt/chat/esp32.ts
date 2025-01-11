@@ -13,28 +13,25 @@ export const post: Handler = async (req, res) => {
 
 	console.log("Received WAV data:", wavBuffer.length, "bytes")
 
-	// Example: write to a file on disk
-	fs.writeFileSync("uploaded.wav", wavBuffer)
+	const audioBase64 = wavBuffer.toString("base64")
+
+	// Create a buffer from the base64 string
+	const audioBuffer = Buffer.from(audioBase64, "base64")
+
 	try {
 		const { result, error } =
-			await deepgram.listen.prerecorded.transcribeFile(
-				// path to the audio file
-				fs.createReadStream("uploaded.wav"),
-				// STEP 3: Configure Deepgram options for audio analysis
-				{
-					model: "nova-2-general",
-					smart_format: true,
-					punctuate: true,
-					language: "en-US"
-				}
-			)
+			await deepgram.listen.prerecorded.transcribeFile(audioBuffer, {
+				model: "nova-2-general",
+				smart_format: true,
+				punctuate: true,
+				language: "en-US"
+			})
 		if (error) {
 			console.error("Error transcribing audio:", error)
 			res.status(500).send("Error transcribing audio")
 			return
 		}
-		//delete the file
-		fs.unlinkSync("uploaded.wav")
+
 		const response = await openai.chat.completions.create({
 			model: "gpt-4o-mini",
 			messages: [
