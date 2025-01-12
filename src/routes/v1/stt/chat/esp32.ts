@@ -9,9 +9,24 @@ const deepgram = createClient(process.env.DEEPGRAM_API_KEY!)
 
 export const post: Handler = async (req, res) => {
 	// req.body will be a Buffer containing all the WAV data
-	const wavBuffer = req.body
+	const wavBuffer = req.body as Buffer
 
 	console.log("Received WAV data:", wavBuffer.length, "bytes")
+	console.log(
+		"First 44 bytes:",
+		Buffer.from(wavBuffer)
+			.slice(0, 44)
+			.toString("hex")
+			.match(/.{2}/g)
+			?.join(" ")
+	)
+
+	// Let's verify the full WAV structure
+	if (wavBuffer.length < 44) {
+		console.error("WAV file too short")
+		res.status(400).send("Invalid WAV file")
+		return
+	}
 
 	const audioBase64 = wavBuffer.toString("base64")
 
